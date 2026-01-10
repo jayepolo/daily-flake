@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { extractSnowReport, generateSMSSummary } from '@/lib/claude'
+import puppeteer from 'puppeteer'
 
 interface ScrapedData {
   newSnowfall: number
@@ -9,24 +10,56 @@ interface ScrapedData {
 }
 
 /**
- * Fetch HTML from a URL
+ * Fetch fully-rendered HTML from a URL using headless browser
+ * This executes JavaScript on the page to get dynamic content
  */
 async function fetchHTML(url: string): Promise<string> {
+  let browser = null
   try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      },
+    console.log(`[Scraper] Launching headless browser for ${url}`)
+
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
+    const page = await browser.newPage()
 
-    return await response.text()
+    // Set a realistic viewport and user agent
+    await page.setViewport({ width: 1920, height: 1080 })
+    await page.setUserAgent(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    )
+
+    console.log(`[Scraper] Navigating to ${url}`)
+
+    // Navigate and wait for network to be idle (all JS loaded)
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: 30000,
+    })
+
+    // Wait a bit more for any dynamic content to load
+    await page.waitForTimeout(2000)
+
+    // Get the fully rendered HTML
+    const html = await page.content()
+
+    console.log(`[Scraper] Successfully fetched ${html.length} characters of HTML`)
+
+    return html
   } catch (error) {
-    console.error(`Failed to fetch ${url}:`, error)
+    console.error(`[Scraper] Failed to fetch ${url}:`, error)
     throw error
+  } finally {
+    if (browser) {
+      await browser.close()
+    }
   }
 }
 

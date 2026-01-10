@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { extractSnowReport, generateSMSSummary } from '@/lib/claude'
+import puppeteer from 'puppeteer'
 
 interface ScrapedData {
   newSnowfall: number
@@ -11,17 +12,48 @@ interface ScrapedData {
 }
 
 async function fetchHTML(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-    },
-  })
+  let browser = null
+  try {
+    console.log(`[Admin Scrape] Launching headless browser for ${url}`)
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+    })
+
+    const page = await browser.newPage()
+    await page.setViewport({ width: 1920, height: 1080 })
+    await page.setUserAgent(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    )
+
+    console.log(`[Admin Scrape] Navigating to ${url}`)
+
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: 30000,
+    })
+
+    await page.waitForTimeout(2000)
+
+    const html = await page.content()
+
+    console.log(`[Admin Scrape] Successfully fetched ${html.length} characters of HTML`)
+
+    return html
+  } catch (error) {
+    console.error(`[Admin Scrape] Failed to fetch ${url}:`, error)
+    throw error
+  } finally {
+    if (browser) {
+      await browser.close()
+    }
   }
-
-  return await response.text()
 }
 
 function getTodayDateString(): string {
