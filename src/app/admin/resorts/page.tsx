@@ -47,6 +47,7 @@ export default function ResortsPage() {
   })
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
+  const [scrapingResortId, setScrapingResortId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchResorts()
@@ -161,6 +162,33 @@ export default function ResortsPage() {
     } catch (error) {
       console.error('Toggle active error:', error)
       alert('Failed to update resort')
+    }
+  }
+
+  const handleScrape = async (resort: Resort) => {
+    if (!confirm(`Force scrape ${resort.name}? This will fetch fresh data from the mountain.`)) {
+      return
+    }
+
+    setScrapingResortId(resort.id)
+    try {
+      const response = await fetch(`/api/admin/resorts/${resort.id}/scrape`, {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to scrape resort')
+      }
+
+      alert(`✓ Successfully scraped ${resort.name}\n\nSummary: ${data.summary}`)
+      fetchResorts()
+    } catch (error: any) {
+      console.error('Scrape error:', error)
+      alert(`✗ Failed to scrape ${resort.name}\n\n${error.message}`)
+    } finally {
+      setScrapingResortId(null)
     }
   }
 
@@ -281,6 +309,14 @@ export default function ResortsPage() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleScrape(resort)}
+                    disabled={scrapingResortId === resort.id}
+                  >
+                    {scrapingResortId === resort.id ? 'Scraping...' : 'Scrape Now'}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleOpenDialog(resort)}>
                     Edit
                   </Button>

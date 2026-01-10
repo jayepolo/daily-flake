@@ -32,6 +32,7 @@ interface Props {
 
 export function SubscriptionTable({ subscriptions, onUpdate }: Props) {
   const [loading, setLoading] = useState<number | null>(null)
+  const [resending, setResending] = useState<number | null>(null)
 
   const handleToggleActive = async (subscription: Subscription) => {
     setLoading(subscription.id)
@@ -78,6 +79,39 @@ export function SubscriptionTable({ subscriptions, onUpdate }: Props) {
       alert('Failed to delete subscription')
     } finally {
       setLoading(null)
+    }
+  }
+
+  const handleResend = async (subscription: Subscription) => {
+    setResending(subscription.id)
+    try {
+      const response = await fetch(`/api/subscriptions/${subscription.id}/resend`, {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send notification')
+      }
+
+      let successMsg = `✓ Sent report for ${subscription.resort.name}\n\n${data.message}`
+
+      if (data.results.email && data.results.sms) {
+        successMsg += '\n\n📧 Email: ' + (data.results.email.success ? 'Sent' : 'Failed')
+        successMsg += '\n📱 SMS: ' + (data.results.sms.success ? 'Sent' : 'Failed')
+      } else if (data.results.email) {
+        successMsg += '\n\n📧 Email: ' + (data.results.email.success ? 'Sent' : 'Failed')
+      } else if (data.results.sms) {
+        successMsg += '\n\n📱 SMS: ' + (data.results.sms.success ? 'Sent' : 'Failed')
+      }
+
+      alert(successMsg)
+    } catch (error: any) {
+      console.error('Resend error:', error)
+      alert(`✗ Failed to send notification\n\n${error.message}`)
+    } finally {
+      setResending(null)
     }
   }
 
@@ -128,10 +162,18 @@ export function SubscriptionTable({ subscriptions, onUpdate }: Props) {
               </TableCell>
               <TableCell className="text-right space-x-2">
                 <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleResend(subscription)}
+                  disabled={resending === subscription.id || loading === subscription.id}
+                >
+                  {resending === subscription.id ? 'Sending...' : 'Send Now'}
+                </Button>
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleToggleActive(subscription)}
-                  disabled={loading === subscription.id}
+                  disabled={loading === subscription.id || resending === subscription.id}
                 >
                   {loading === subscription.id
                     ? 'Updating...'
@@ -143,7 +185,7 @@ export function SubscriptionTable({ subscriptions, onUpdate }: Props) {
                   variant="destructive"
                   size="sm"
                   onClick={() => handleDelete(subscription)}
-                  disabled={loading === subscription.id}
+                  disabled={loading === subscription.id || resending === subscription.id}
                 >
                   {loading === subscription.id ? 'Removing...' : 'Remove'}
                 </Button>
