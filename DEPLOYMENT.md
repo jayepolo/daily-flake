@@ -56,6 +56,16 @@ TWILIO_VERIFY_SERVICE_SID=VA...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+### Resend Email
+```
+RESEND_API_KEY=re_...
+```
+
+Get your API key from:
+1. Sign up at https://resend.com
+2. Go to API Keys → Create API Key
+3. Copy the key (starts with `re_`)
+
 ### App Configuration
 ```
 NEXT_PUBLIC_APP_URL=https://your-app.railway.app

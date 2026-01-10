@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { PhoneVerification } from '@/components/dashboard/PhoneVerification'
 import { SubscriptionsSection } from '@/components/dashboard/SubscriptionsSection'
+import { NotificationPreferences } from '@/components/dashboard/NotificationPreferences'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -37,15 +38,13 @@ export default async function DashboardPage() {
           phoneVerified={user.phoneVerified}
         />
 
-        {user.phoneVerified ? (
-          <SubscriptionsSection />
-        ) : (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <p className="text-sm text-yellow-800">
-              📱 Please verify your phone number to start receiving SMS notifications.
-            </p>
-          </div>
-        )}
+        <NotificationPreferences
+          emailNotificationsEnabled={user.emailNotificationsEnabled}
+          smsNotificationsEnabled={user.smsNotificationsEnabled}
+          phoneVerified={user.phoneVerified}
+        />
+
+        <SubscriptionsSection />
       </div>
     </div>
   )

@@ -15,6 +15,8 @@ model User {
   phoneVerified             Boolean   @default(false) @map("phone_verified")
   phoneVerificationCode     String?   @map("phone_verification_code")
   phoneVerificationExpiresAt DateTime? @map("phone_verification_expires_at")
+  emailNotificationsEnabled Boolean   @default(true) @map("email_notifications_enabled")
+  smsNotificationsEnabled   Boolean   @default(false) @map("sms_notifications_enabled")
   timezone                   String    @default("America/Denver")
   isPaused                   Boolean   @default(false) @map("is_paused")
   createdAt                  DateTime  @default(now()) @map("created_at")
@@ -78,10 +80,11 @@ model DeliveryLog {
   id              Int      @id @default(autoincrement())
   userId          Int      @map("user_id")
   resortId        Int      @map("resort_id")
-  phoneNumber     String   @map("phone_number")
+  deliveryType    String   @map("delivery_type") // email/sms
+  recipientAddress String  @map("recipient_address") // email address or phone number
   messageSent     String   @map("message_sent")
   sentAt          DateTime @default(now()) @map("sent_at")
-  twilioMessageSid String? @map("twilio_message_sid")
+  messageId       String?  @map("message_id") // Twilio SID or Resend ID
   deliveryStatus  String   @map("delivery_status") // sent/delivered/failed
   errorDetails    String?  @map("error_details")
 
