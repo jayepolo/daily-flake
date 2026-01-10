@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { PhoneVerification } from '@/components/dashboard/PhoneVerification'
@@ -15,7 +15,7 @@ export default async function DashboardPage() {
 
   // If user doesn't exist, create them (fallback in case webhook didn't fire)
   if (!user) {
-    const { user: clerkUser } = await auth()
+    const clerkUser = await currentUser()
     user = await prisma.user.create({
       data: {
         clerkUserId: userId,
