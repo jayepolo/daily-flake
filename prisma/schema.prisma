@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                         Int       @id @default(autoincrement())
+  clerkUserId               String    @unique @map("clerk_user_id")
+  email                      String    @unique
+  phoneNumber               String?   @map("phone_number")
+  phoneVerified             Boolean   @default(false) @map("phone_verified")
+  phoneVerificationCode     String?   @map("phone_verification_code")
+  phoneVerificationExpiresAt DateTime? @map("phone_verification_expires_at")
+  timezone                   String    @default("America/Denver")
+  isPaused                   Boolean   @default(false) @map("is_paused")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+
+  subscriptions UserSubscription[]
+  deliveryLogs  DeliveryLog[]
+
+  @@map("users")
+}
+
+model Resort {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  snowReportUrl String   @map("snow_report_url")
+  scrapeTime    String   @map("scrape_time") // HH:mm format
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  subscriptions  UserSubscription[]
+  scrapedReports ScrapedReport[]
+  deliveryLogs   DeliveryLog[]
+
+  @@map("resorts")
+}
+
+model UserSubscription {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  resortId         Int      @map("resort_id")
+  notificationTime String   @map("notification_time") // HH:mm format
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resort Resort @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resortId])
+  @@map("user_subscriptions")
+}
+
+model ScrapedReport {
+  id           Int      @id @default(autoincrement())
+  resortId     Int      @map("resort_id")
+  scrapedAt    DateTime @default(now()) @map("scraped_at")
+  reportDate   String   @map("report_date") // YYYY-MM-DD format
+  reportData   String   @map("report_data") // JSON string
+  smsSummary   String?  @map("sms_summary")
+  scrapeStatus String   @map("scrape_status") // success/failed
+  errorMessage String?  @map("error_message")
+
+  resort Resort @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@unique([resortId, reportDate])
+  @@map("scraped_reports")
+}
+
+model DeliveryLog {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  resortId        Int      @map("resort_id")
+  phoneNumber     String   @map("phone_number")
+  messageSent     String   @map("message_sent")
+  sentAt          DateTime @default(now()) @map("sent_at")
+  twilioMessageSid String? @map("twilio_message_sid")
+  deliveryStatus  String   @map("delivery_status") // sent/delivered/failed
+  errorDetails    String?  @map("error_details")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resort Resort @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_logs")
+}
