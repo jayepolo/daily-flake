@@ -29,7 +29,7 @@ function getTodayDateString(): string {
   return now.toISOString().split('T')[0]
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
 
@@ -43,7 +43,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const resortId = parseInt(params.id)
+    const { id } = await params
+    const resortId = parseInt(id)
     if (isNaN(resortId)) {
       return NextResponse.json({ error: 'Invalid resort ID' }, { status: 400 })
     }
@@ -108,7 +109,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Try to save error to database
     try {
-      const resortId = parseInt(params.id)
+      const { id } = await params
+      const resortId = parseInt(id)
       const today = getTodayDateString()
 
       await prisma.scrapedReport.upsert({

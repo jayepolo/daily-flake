@@ -9,7 +9,7 @@ function getTodayDateString(): string {
   return now.toISOString().split('T')[0]
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth()
 
@@ -17,7 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const subscriptionId = parseInt(params.id)
+    const { id } = await params
+    const subscriptionId = parseInt(id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json({ error: 'Invalid subscription ID' }, { status: 400 })
     }
