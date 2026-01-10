@@ -39,7 +39,8 @@ async function fetchHTML(url: string): Promise<string> {
       timeout: 30000,
     })
 
-    await page.waitForTimeout(2000)
+    // Wait additional time for dynamic content to load
+    await new Promise(resolve => setTimeout(resolve, 2000))
 
     const html = await page.content()
 

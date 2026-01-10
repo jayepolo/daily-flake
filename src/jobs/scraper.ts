@@ -45,7 +45,7 @@ async function fetchHTML(url: string): Promise<string> {
     })
 
     // Wait a bit more for any dynamic content to load
-    await page.waitForTimeout(2000)
+    await new Promise(resolve => setTimeout(resolve, 2000))
 
     // Get the fully rendered HTML
     const html = await page.content()
