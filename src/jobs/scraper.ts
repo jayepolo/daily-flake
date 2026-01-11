@@ -10,10 +10,10 @@ interface ScrapedData {
 }
 
 /**
- * Fetch fully-rendered HTML from a URL using headless browser
- * This executes JavaScript on the page to get dynamic content
+ * Fetch clean page text from a URL using headless browser
+ * This executes JavaScript on the page and extracts readable text (not HTML markup)
  */
-async function fetchHTML(url: string): Promise<string> {
+async function fetchPageText(url: string): Promise<string> {
   let browser = null
   try {
     console.log(`[Scraper] Launching headless browser for ${url}`)
@@ -47,12 +47,12 @@ async function fetchHTML(url: string): Promise<string> {
     // Wait a bit more for any dynamic content to load
     await new Promise(resolve => setTimeout(resolve, 5000))
 
-    // Get the fully rendered HTML
-    const html = await page.content()
+    // Get the clean text content (not HTML markup)
+    const pageText = await page.evaluate(() => document.body.innerText)
 
-    console.log(`[Scraper] Successfully fetched ${html.length} characters of HTML`)
+    console.log(`[Scraper] Successfully fetched ${pageText.length} characters of text`)
 
-    return html
+    return pageText
   } catch (error) {
     console.error(`[Scraper] Failed to fetch ${url}:`, error)
     throw error
@@ -120,15 +120,15 @@ async function scrapeResort(resort: any): Promise<void> {
       return
     }
 
-    // Fetch HTML
-    console.log(`[Scraper] Fetching HTML for ${resort.name}...`)
-    const html = await fetchHTML(resort.snowReportUrl)
+    // Fetch page text using Puppeteer
+    console.log(`[Scraper] Fetching page text for ${resort.name}...`)
+    const pageText = await fetchPageText(resort.snowReportUrl)
 
-    // Extract data with Claude
+    // Extract data with Claude AI
     console.log(`[Scraper] Extracting data for ${resort.name} with Claude AI...`)
-    const reportData: ScrapedData = await extractSnowReport(html, resort.name)
+    const reportData: ScrapedData = await extractSnowReport(pageText, resort.name)
 
-    // Generate SMS summary
+    // Generate SMS summary with Claude
     console.log(`[Scraper] Generating SMS summary for ${resort.name}...`)
     const smsSummary = await generateSMSSummary(reportData, resort.name)
 

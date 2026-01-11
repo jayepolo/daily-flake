@@ -11,7 +11,7 @@ interface ScrapedData {
   conditions: string
 }
 
-async function fetchHTML(url: string): Promise<string> {
+async function fetchPageText(url: string): Promise<string> {
   let browser = null
   try {
     console.log(`[Admin Scrape] Launching headless browser for ${url}`)
@@ -42,12 +42,12 @@ async function fetchHTML(url: string): Promise<string> {
     // Wait additional time for dynamic content to load
     await new Promise(resolve => setTimeout(resolve, 5000))
 
-    const html = await page.content()
+    // Get the clean text content (not HTML markup)
+    const pageText = await page.evaluate(() => document.body.innerText)
 
-    console.log(`[Admin Scrape] Successfully fetched ${html.length} characters of HTML`)
-    console.log(`[Admin Scrape] First 500 chars: ${html.substring(0, 500)}`)
+    console.log(`[Admin Scrape] Successfully fetched ${pageText.length} characters of text`)
 
-    return html
+    return pageText
   } catch (error) {
     console.error(`[Admin Scrape] Failed to fetch ${url}:`, error)
     throw error
@@ -96,13 +96,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     console.log(`[Admin Scrape] Force scraping ${resort.name}...`)
 
-    // Fetch HTML
-    const html = await fetchHTML(resort.snowReportUrl)
+    // Fetch page text using Puppeteer
+    const pageText = await fetchPageText(resort.snowReportUrl)
 
-    // Extract data with Claude
-    const reportData: ScrapedData = await extractSnowReport(html, resort.name)
+    // Extract data with Claude AI
+    const reportData: ScrapedData = await extractSnowReport(pageText, resort.name)
 
-    // Generate SMS summary
+    // Generate SMS summary with Claude
     const smsSummary = await generateSMSSummary(reportData, resort.name)
 
     // Upsert to database (update if exists, create if not)
