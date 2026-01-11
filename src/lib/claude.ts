@@ -9,25 +9,44 @@ export async function extractSnowReport(html: string, resortName: string) {
     throw new Error('Claude API key not configured')
   }
 
-  const prompt = `Extract snow report data from this ski resort webpage and return ONLY valid JSON with no markdown formatting.
+  const prompt = `You are extracting snow report data from ${resortName} ski resort's webpage.
 
-Required fields:
-- newSnowfall: number (inches in last 24h, or 0 if none)
-- baseDepth: number (total base in inches, or 0 if unknown)
-- liftsOpen: string (format "X/Y" or "all" or "unknown")
-- conditions: string (one word: excellent/good/fair/poor)
+Look for these data points anywhere in the HTML:
 
-If any data is unavailable, use 0 for numbers or "unknown" for strings.
+1. NEW SNOWFALL (24 hours): Look for phrases like:
+   - "overnight snow", "last 24 hours", "24hr snow", "new snow", "fresh snow"
+   - Numbers followed by " or inches near these terms
+   - If you see "0" or "trace" or nothing, use 0
+
+2. BASE DEPTH: Look for phrases like:
+   - "base depth", "snow base", "mid mountain base", "base"
+   - Usually a larger number (30-100+) followed by " or inches
+   - If unavailable, use 0
+
+3. LIFTS OPEN: Look for phrases like:
+   - "lifts open", "X of Y lifts", "X/Y lifts", "lift status"
+   - Format as "X/Y" (e.g., "10/15")
+   - If you can't find exact numbers, use "unknown"
+
+4. CONDITIONS: Look for overall condition descriptions:
+   - Words like "powder", "packed powder", "groomed", "icy", "spring conditions"
+   - Rate as: "excellent" (powder/fresh), "good" (groomed/packed), "fair" (variable), "poor" (icy/bare)
+   - If unavailable, use "unknown"
+
+IMPORTANT: Be aggressive in finding data. Look through the ENTIRE HTML. Numbers near snow-related keywords are likely the data we need.
+
+Return ONLY this JSON format (no markdown, no explanation):
+{"newSnowfall": number, "baseDepth": number, "liftsOpen": "string", "conditions": "string"}
 
 Webpage HTML:
-${html.substring(0, 50000)}
+${html.substring(0, 100000)}
 
-Return ONLY the JSON object, no explanation or markdown.`
+JSON:`
 
   try {
     const response = await client.messages.create({
       model: 'claude-3-5-haiku-20241022',
-      max_tokens: 500,
+      max_tokens: 1000,
       messages: [{
         role: 'user',
         content: prompt

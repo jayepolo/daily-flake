@@ -40,11 +40,12 @@ async function fetchHTML(url: string): Promise<string> {
     })
 
     // Wait additional time for dynamic content to load
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 5000))
 
     const html = await page.content()
 
     console.log(`[Admin Scrape] Successfully fetched ${html.length} characters of HTML`)
+    console.log(`[Admin Scrape] First 500 chars: ${html.substring(0, 500)}`)
 
     return html
   } catch (error) {
