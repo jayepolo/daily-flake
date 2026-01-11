@@ -25,12 +25,8 @@ export async function sendSnowReportEmail({
   reportData,
 }: SendSnowReportEmailParams) {
   try {
-    // Use Resend's testing email for now (works without domain verification)
-    // To use custom domain: Verify dailyflake.com in Resend dashboard
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-
     const { data, error } = await resend.emails.send({
-      from: fromEmail,
+      from: 'The Daily Flake <dailyflake@pololabs.io>',
       to: [to],
       subject: `${resortName} Snow Report - ${new Date().toLocaleDateString()}`,
       html: generateEmailHTML(resortName, reportSummary, reportData),
