@@ -89,7 +89,7 @@ export function NotificationPreferences({
             id="sms-notifications"
             checked={smsEnabled}
             onChange={(e) => updatePreference('sms', e.target.checked)}
-            disabled={loading || !phoneVerified}
+            disabled={true}
             className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
           />
           <div className="flex-1">
