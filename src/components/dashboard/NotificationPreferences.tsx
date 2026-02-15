@@ -95,7 +95,7 @@ export function NotificationPreferences({
           <div className="flex-1">
             <Label
               htmlFor="sms-notifications"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none pointer-events-none"
             >
               📱 SMS Notifications
             </Label>
